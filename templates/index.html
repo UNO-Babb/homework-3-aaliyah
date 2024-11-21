@@ -3,59 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hexagon Tile Game</title>
+    <title>Tic-Tac-Toe Game</title>
     <style>
         body {
+            font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            font-family: Arial, sans-serif;
             background-color: #f0f0f0;
         }
-        #board {
+        .board {
             display: grid;
-            grid-template-columns: repeat(10, 60px);
-            grid-template-rows: repeat(10, 52px);
-            gap: 2px;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
         }
-        .hex {
-            width: 60px;
-            height: 52px;
-            background-color: lightgray;
-            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-            transition: background-color 0.2s;
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            font-size: 2em;
+            border: 1px solid #333;
+            cursor: pointer;
+        }
+        button {
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
+    <div>
+        <div class="board" id="board">
+            <!-- The cells will be populated by JavaScript -->
+        </div>
+        <button onclick="resetGame()">Restart Game</button>
+    </div>
 
-<div id="board">
-    <!-- Hexagonal tiles will be added here on clicks -->
-</div>
+    <script>
+        let currentPlayer = 'X';
+        const board = document.getElementById('board');
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-    $(document).ready(function() {
-        // Create an empty board of hex tiles
-        for (let i = 0; i < 100; i++) {
-            const hexTile = $('<div class="hex"></div>');
-            hexTile.data("clicked", false);  // Track if a tile has been clicked
-            $('#board').append(hexTile);
+        // Create the board
+        for (let i = 0; i < 9; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.setAttribute('data-index', i);
+            cell.addEventListener('click', cellClicked);
+            board.appendChild(cell);
         }
 
-        // Add color to hex tiles on click
-        $('#board').on('click', '.hex', function() {
-            if (!$(this).data("clicked")) {  // Only allow one click per tile
-                $.getJSON('/add_tile', function(data) {
-                    $(this).css('background-color', data.color);
-                    $(this).data("clicked", true);  // Mark as clicked
-                }.bind(this));
-            }
-        });
-    });
-</script>
+        // Handle cell click
+        function cellClicked(event) {
+            const cell = event.target;
+            const index = cell.getAttribute('data-index');
 
+            fetch(`/move/${index}/${currentPlayer}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'valid') {
+                        cell.textContent = currentPlayer;
+                        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                    }
+                    if (data.winner) {
+                        alert(`${data.winner} wins!`);
+                    }
+                });
+        }
+
+        // Reset game
+        function resetGame() {
+            fetch('/reset')
+                .then(() => {
+                    document.querySelectorAll('.cell').forEach(cell => cell.textContent = '');
+                });
+        }
+    </script>
 </body>
 </html>
